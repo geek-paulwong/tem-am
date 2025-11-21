@@ -1,58 +1,130 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OpenAI WebRTC Voice Agent</title>
+  <style>
+    /* Mobile-friendly layout */
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      background-color: #f4f4f4;
+      color: #333;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    #startBtn {
+      padding: 15px 30px;
+      font-size: 1.2rem;
+      border: none;
+      border-radius: 10px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      margin-bottom: 20px;
+    }
+
+    #startBtn:active {
+      background-color: #0056b3;
+    }
+
+    audio {
+      margin-top: 20px;
+      width: 100%;
+      max-width: 500px;
+    }
+
+    @media (max-width: 480px) {
+      #startBtn {
+        width: 100%;
+        font-size: 1.1rem;
+      }
+
+      h1 {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
 </head>
 <body>
   <h1>WebRTC Voice Agent</h1>
   <button id="startBtn">Start</button>
 
   <script>
-    document.getElementById("startBtn").onclick = start;
-
     async function start() {
-      // 1. Ask our Node backend for the WebRTC Session (SDP)
-      const session = await fetch("/session-webrtc", {
-        method: "POST",
-      }).then((r) => r.json());
+      console.log("[DEBUG] Starting WebRTC session...");
+      try {
+        // 1️⃣ Request session from backend (gets client_secret only)
+        const session = await fetch("/session-webrtc", { method: "POST" }).then(r => r.json());
+        console.log("[DEBUG] Received session from backend:", session);
 
-      const offer = session.webrtc_offer;
-      const clientSecret = session.client_secret.value;
+        if (!session.client_secret?.value) {
+          console.error("[ERROR] Missing client_secret in session response:", session);
+          return;
+        }
+        const clientSecret = session.client_secret.value;
 
-      // 2. Create a PeerConnection
-      const pc = new RTCPeerConnection();
+        // 2️⃣ Create PeerConnection
+        const pc = new RTCPeerConnection();
+        console.log("[DEBUG] RTCPeerConnection created");
 
-      // 3. When OpenAI sends audio back, play it
-      pc.ontrack = (event) => {
-        console.log("Received AI audio track");
-        const audio = document.createElement("audio");
-        audio.srcObject = event.streams[0];
-        audio.autoplay = true;
-        document.body.appendChild(audio);
-      };
+        // 3️⃣ Handle AI audio track
+        pc.ontrack = event => {
+          console.log("[DEBUG] Received AI audio track");
+          const audio = document.createElement("audio");
+          audio.srcObject = event.streams[0];
+          audio.autoplay = true;
+          audio.controls = true;
+          document.body.appendChild(audio);
+        };
 
-      // 4. Capture mic audio and add as outgoing stream
-      const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mic.getTracks().forEach((track) => pc.addTrack(track, mic));
+        pc.onconnectionstatechange = () => console.log("[DEBUG] connectionState:", pc.connectionState);
+        pc.oniceconnectionstatechange = () => console.log("[DEBUG] iceConnectionState:", pc.iceConnectionState);
+        pc.onicecandidate = e => { if (e.candidate) console.log("[DEBUG] New ICE candidate:", e.candidate); };
 
-      // 5. Set OpenAI's offer as remote description
-      await pc.setRemoteDescription({ type: "offer", sdp: offer });
+        // 4️⃣ Capture microphone audio
+        const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mic.getTracks().forEach(track => pc.addTrack(track, mic));
+        console.log("[DEBUG] Microphone track added");
+        
+        // 5️⃣ Create local SDP offer
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        console.log("[DEBUG] Local SDP offer created");
 
-      // 6. Create the answer (our SDP)
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
+        // 6️⃣ Send offer to backend, backend will forward to OpenAI
+        await fetch("/start-offer", {
+          method: "POST",
+          headers: { "Content-Type": "application/sdp" },
+          body: offer.sdp
+        });
 
-      // 7. Send answer back to OpenAI
-      await fetch(clientSecret, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/sdp",
-        },
-        body: pc.localDescription.sdp,
-      });
+        console.log("[DEBUG] Offer sent to backend, WebRTC session should be live");
 
-      console.log("WebRTC session established!");
+      } catch (err) {
+        console.error("[ERROR] Failed to start WebRTC session:", err);
+      }
     }
+
+    // Bind button after DOM is loaded
+    document.addEventListener("DOMContentLoaded", () => {
+      const startBtn = document.getElementById("startBtn");
+      startBtn.onclick = start;
+      console.log("[DEBUG] Start button bound to start()");
+    });
   </script>
 </body>
 </html>
