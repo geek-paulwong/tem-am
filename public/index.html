@@ -62,6 +62,7 @@
 <body>
   <h1>WebRTC Voice Agent</h1>
   <button id="startBtn">Start</button>
+  <button id="stopBtn">Stop & Send</button>
 
   <div id="speakingIndicator" style="
     margin-top: 20px;
@@ -104,6 +105,10 @@
       }
     }
 
+    let micStream;
+    let pc;         // PeerConnection, needs to be accessible in stopAndSend()
+    let clientSecret; // client secret from backend
+
     async function start() {
       debugLog("Starting WebRTC session...");
       try {
@@ -114,11 +119,15 @@
           console.error("[ERROR] Missing client_secret in session response:", session);
           return;
         }
-        const clientSecret = session.client_secret.value;
+        clientSecret = session.client_secret.value;
 
         // 2️⃣ Create PeerConnection
-        const pc = new RTCPeerConnection();
+        pc = new RTCPeerConnection();
         debugLog("RTCPeerConnection created");
+
+        const dc = pc.createDataChannel("oai-debug");
+        dc.onopen = () => debugLog("✅ Data channel open with AI");
+        dc.onmessage = (event) => debugLog("💬 AI event:", event.data);
 
         // 3️⃣ Handle AI audio track
         pc.ontrack = event => {
@@ -135,9 +144,35 @@
         pc.onicecandidate = e => { if (e.candidate) debugLog("New ICE candidate:", e.candidate); };
 
         // 4️⃣ Capture microphone audio
-        const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
+        // const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mic = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            noiseSuppression: true,
+            echoCancellation: true,
+          }
+        });
         mic.getTracks().forEach(track => pc.addTrack(track, mic));
         debugLog("Microphone track added");
+
+        // 🔹 DEBUG: check that tracks are attached to the PeerConnection
+        pc.getSenders().forEach(sender => {
+          console.log("[DEBUG] Sender track attached to PeerConnection:", sender.track);
+        });
+
+        // 🔹 Optional: log mic activity in real-time
+        const audioContext = new AudioContext();
+        const source = audioContext.createMediaStreamSource(mic);
+        const analyser = audioContext.createAnalyser();
+        source.connect(analyser);
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+        function checkMicActivity() {
+          analyser.getByteTimeDomainData(dataArray);
+          const max = Math.max(...dataArray);
+          if (max > 128) console.log("🎤 Mic is active");
+          requestAnimationFrame(checkMicActivity);
+        }
+        checkMicActivity();
 
         // 🔹 Show speaking indicator as soon as mic is active
         showSpeakingIndicator();
@@ -154,16 +189,53 @@
         debugLog("Local SDP offer created");
 
         // 6️⃣ Send offer to backend, backend will forward to OpenAI
-        await fetch("/start-offer", {
+        const resp = await fetch("/start-offer", {
           method: "POST",
           headers: { "Content-Type": "application/sdp" },
           body: offer.sdp
         });
 
-        debugLog("Offer sent to backend, WebRTC session should be live");
+        const answerSdp = await resp.text();
+        debugLog("Received SDP answer from backend:", answerSdp);
 
+        await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
+        debugLog("Remote description set, connection should start");
       } catch (err) {
         console.error("[ERROR] Failed to start WebRTC session:", err);
+      }
+    }
+
+    async function stopAndSend() {
+      debugLog("Stop & Send triggered");
+
+      // Stop all mic tracks
+      if (micStream) {
+        micStream.getTracks().forEach(track => track.stop());
+      }
+
+      hideSpeakingIndicator();
+
+      if (!pc || !clientSecret) {
+        debugLog("No active PeerConnection or client secret");
+        return;
+      }
+
+      try {
+        // Send local description (SDP) to backend manually
+        const offer = pc.localDescription;
+        if (!offer) {
+          debugLog("No local SDP offer to send");
+          return;
+        }
+
+        const response = await fetch("/start-offer", {
+          method: "POST",
+          headers: { "Content-Type": "application/sdp" },
+          body: offer.sdp
+        });
+        debugLog("Manual offer sent to backend, status:", response.status);
+      } catch (err) {
+        console.error("[ERROR] Failed to send manual offer:", err);
       }
     }
 
@@ -182,6 +254,10 @@
       const startBtn = document.getElementById("startBtn");
       startBtn.onclick = start;
       debugLog("Start button bound to start()");
+
+      const stopBtn = document.getElementById("stopBtn");
+      stopBtn.onclick = stopAndSend;
+      debugLog("Stop button bound to stopAndSend()");
     });
   </script>
 </body>

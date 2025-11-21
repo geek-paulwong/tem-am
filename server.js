@@ -26,13 +26,22 @@ app.post("/session-webrtc", async (req, res) => {
         body: JSON.stringify({
           model: "gpt-4o-realtime-preview",
           voice: "verse",
+          // 🔹 ADD THIS OBJECT TO FINE-TUNE VAD
+          turn_detection: {
+            type: "server_vad",
+            threshold: 0.8,           // 🔹 lower = more sensitive to quiet speech
+            prefix_padding_ms: 200,    // padding before speech is considered
+            silence_duration_ms: 150,  // 🔹 shorter silence = faster turn detection
+            create_response: true,
+            interrupt_response: true
+          }
         }),
       }
     );
 
     const data = await response.json();
     // 🔹 Full debug dump of the session response
-    console.log("[DEBUG] Full OpenAI session response:", JSON.stringify(data, null, 2));
+    // console.log("[DEBUG] Full OpenAI session response:", JSON.stringify(data, null, 2));
 
     // Remove the old webrtc_offer check
     if (!data.client_secret?.value) {
@@ -54,26 +63,27 @@ app.use("/start-offer", express.text({ type: "*/*" }));
 app.post("/start-offer", async (req, res) => {
   try {
     const sdpOffer = req.body; // raw SDP string from frontend
-
-    // 🔹 Get ephemeral client secret from /session-webrtc
-    const sessionResponse = await fetch("http://localhost:3000/session-webrtc", { method: "POST" });
-    const sessionData = await sessionResponse.json();
-    const clientSecret = sessionData.client_secret.value;
-
-    // Forward the SDP offer to OpenAI Realtime endpoint
     const response = await fetch("https://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${clientSecret}`,
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
         "Content-Type": "application/sdp"
       },
-      body: sdpOffer
+      body: sdpOffer // raw SDP string
     });
 
-    res.sendStatus(response.status); // forward status to frontend
+    if (!response.ok) {
+      const text = await response.text();
+      console.error("[ERROR] OpenAI call failed:", response.status, text);
+      return res.status(500).send(text);
+    }
+
+    const answerSdp = await response.text(); // <--- raw SDP
+    res.type("application/sdp").send(answerSdp);
+
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to send offer to OpenAI" });
+    console.error("[ERROR] Failed to send offer to OpenAI:", err);
+    res.status(500).send("Server error");
   }
 });
 
