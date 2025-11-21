@@ -61,6 +61,25 @@
 </head>
 <body>
   <h1>WebRTC Voice Agent</h1>
+
+  <!-- AI Body -->
+  <div id="aiBody" style="
+    margin-top: 20px;
+    width: 150px;
+    height: 150px;
+    background-color: #007bff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    transition: transform 0.1s ease;
+  ">
+    AI
+  </div>
+
   <button id="startBtn">Start</button>
   <button id="stopBtn">Stop & Send</button>
 
@@ -126,17 +145,49 @@
         debugLog("RTCPeerConnection created");
 
         const dc = pc.createDataChannel("oai-debug");
-        dc.onopen = () => debugLog("✅ Data channel open with AI");
-        dc.onmessage = (event) => debugLog("💬 AI event:", event.data);
+        // dc.onopen = () => debugLog("✅ Data channel open with AI");
+        // dc.onmessage = (event) => debugLog("💬 AI event:", event.data);
 
         // 3️⃣ Handle AI audio track
         pc.ontrack = event => {
           debugLog("🔹🔹🔹 Received AI audio track");
+
           const audio = document.createElement("audio");
           audio.srcObject = event.streams[0];
           audio.autoplay = true;
           audio.controls = true;
+
           document.body.appendChild(audio);
+
+          // 🔹 Use AudioContext to track AI volume
+          const audioCtx = new AudioContext();
+          const source = audioCtx.createMediaStreamSource(event.streams[0]);
+          const analyser = audioCtx.createAnalyser();
+          analyser.fftSize = 512;
+          source.connect(analyser);
+          const data = new Uint8Array(analyser.frequencyBinCount);
+
+          let vibrating = false;
+
+          function checkVolume() {
+            analyser.getByteFrequencyData(data);
+            const avg = data.reduce((a,b)=>a+b,0)/data.length;
+
+            if(avg > 10){ // threshold for AI “speaking”
+              if(!vibrating){
+                vibrating = true;
+                aiSpeaking();
+              }
+            } else {
+              if(vibrating){
+                vibrating = false;
+                aiSilent();
+              }
+            }
+            requestAnimationFrame(checkVolume);
+          }
+
+          checkVolume();
         };
 
         pc.onconnectionstatechange = () => debugLog("connectionState:", pc.connectionState);
@@ -247,6 +298,25 @@
     function hideSpeakingIndicator() {
       const el = document.getElementById("speakingIndicator");
       if (el) el.style.display = "none";
+    }
+
+    function aiSpeaking() {
+      const el = document.getElementById("aiBody");
+      if (!el) return;
+      // Vibration: small random shakes
+      const interval = setInterval(() => {
+        const x = (Math.random() - 0.5) * 10; // ±5px
+        const y = (Math.random() - 0.5) * 10; // ±5px
+        el.style.transform = `translate(${x}px, ${y}px)`;
+      }, 50);
+      el.dataset.vibInterval = interval;
+    }
+
+    function aiSilent() {
+      const el = document.getElementById("aiBody");
+      if (!el) return;
+      clearInterval(el.dataset.vibInterval);
+      el.style.transform = "translate(0,0)";
     }
 
     // Bind button after DOM is loaded
