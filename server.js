@@ -26,6 +26,7 @@ app.post("/session-webrtc", async (req, res) => {
         body: JSON.stringify({
           model: "gpt-4o-realtime-preview",
           voice: "verse",
+          instructions: "Always respond in English, even if the user speaks another language.",
           // 🔹 ADD THIS OBJECT TO FINE-TUNE VAD
           turn_detection: {
             type: "server_vad",
