@@ -26,7 +26,7 @@
     }
 
     #toggleBtn {
-      margin-top: 20px;
+      margin-top: 50px;
       padding: 15px 80px;
       font-size: 1.2rem;
       border: none;
@@ -64,7 +64,7 @@
   <h1>Tem Am</h1>
 
   <!-- AI Body -->
-  <div id="aiBody" style="
+  <!-- <div id="aiBody" style="
     margin-top: 20px;
     width: 150px;
     height: 150px;
@@ -79,6 +79,24 @@
     transition: transform 0.1s ease;
   ">
     AI
+  </div> -->
+
+  <div id="aiBody" style="
+    margin-top: 20px;
+    width: 150px;
+    height: 150px;
+    background-color: #007bff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    transition: transform 0.1s ease;
+    transform: rotate(45deg); /* start rotated */
+  ">
+  
   </div>
 
   <button id="toggleBtn">Tell Me About Me</button>
@@ -309,6 +327,7 @@
       if (el) el.style.display = "none";
     }
 
+    /*
     function aiSpeaking() {
       const el = document.getElementById("aiBody");
       if (!el) return;
@@ -326,6 +345,31 @@
       if (!el) return;
       clearInterval(el.dataset.vibInterval);
       el.style.transform = "translate(0,0)";
+    }
+    */
+
+    function aiSpeaking() {
+      const el = document.getElementById("aiBody");
+      if (!el) return;
+
+      // Clear previous interval if any
+      if (el.dataset.vibInterval) clearInterval(el.dataset.vibInterval);
+
+      // Vibrate around rotated position
+      const interval = setInterval(() => {
+        const x = (Math.random() - 0.5) * 10; // ±5px
+        const y = (Math.random() - 0.5) * 10; // ±5px
+        el.style.transform = `rotate(45deg) translate(${x}px, ${y}px)`;
+      }, 50);
+
+      el.dataset.vibInterval = interval;
+    }
+
+    function aiSilent() {
+      const el = document.getElementById("aiBody");
+      if (!el) return;
+      clearInterval(el.dataset.vibInterval);
+      el.style.transform = "rotate(45deg)"; // keep static rotated state
     }
 
     // Bind button after DOM is loaded
