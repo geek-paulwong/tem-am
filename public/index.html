@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>OpenAI WebRTC Voice Agent</title>
+</head>
+<body>
+  <h1>WebRTC Voice Agent</h1>
+  <button id="startBtn">Start</button>
+
+  <script>
+    document.getElementById("startBtn").onclick = start;
+
+    async function start() {
+      // 1. Ask our Node backend for the WebRTC Session (SDP)
+      const session = await fetch("/session-webrtc", {
+        method: "POST",
+      }).then((r) => r.json());
+
+      const offer = session.webrtc_offer;
+      const clientSecret = session.client_secret.value;
+
+      // 2. Create a PeerConnection
+      const pc = new RTCPeerConnection();
+
+      // 3. When OpenAI sends audio back, play it
+      pc.ontrack = (event) => {
+        console.log("Received AI audio track");
+        const audio = document.createElement("audio");
+        audio.srcObject = event.streams[0];
+        audio.autoplay = true;
+        document.body.appendChild(audio);
+      };
+
+      // 4. Capture mic audio and add as outgoing stream
+      const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mic.getTracks().forEach((track) => pc.addTrack(track, mic));
+
+      // 5. Set OpenAI's offer as remote description
+      await pc.setRemoteDescription({ type: "offer", sdp: offer });
+
+      // 6. Create the answer (our SDP)
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+
+      // 7. Send answer back to OpenAI
+      await fetch(clientSecret, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/sdp",
+        },
+        body: pc.localDescription.sdp,
+      });
+
+      console.log("WebRTC session established!");
+    }
+  </script>
+</body>
+</html>
