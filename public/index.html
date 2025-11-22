@@ -26,12 +26,12 @@
     }
 
     #toggleBtn {
-      margin-top: 50px;
+      margin-top: 80px;
       padding: 15px 80px;
       font-size: 1.2rem;
       border: none;
       border-radius: 10px;
-      background-color: #f2473f;
+      background-color: #53D76A;
       color: white;
       cursor: pointer;
       transition: background-color 0.2s;
@@ -61,7 +61,7 @@
   </style>
 </head>
 <body>
-  <h1>Tem Am</h1>
+  <!-- <h1>Tem Am</h1> -->
 
   <!-- AI Body -->
   <!-- <div id="aiBody" style="
@@ -81,8 +81,22 @@
     AI
   </div> -->
 
+  <!-- Header Image -->
+  <img
+    src="/header.png"
+    alt="Header"
+    style="
+      width: 80px; /* adjust size */
+      max-width: 90%;
+      margin-bottom: 0px;
+      border-radius: 12px; /* optional rounded corners */
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    "
+  />
+  <h3>Tell Me About Me</h3>
+
   <div id="aiBody" style="
-    margin-top: 20px;
+    margin-top: 50px;
     width: 150px;
     height: 150px;
     background-color: #007bff;
@@ -96,7 +110,7 @@
     transition: transform 0.1s ease;
     transform: rotate(45deg); /* start rotated */
   ">
-  
+
   </div>
 
   <button id="toggleBtn">Tell Me About Me</button>
@@ -378,10 +392,12 @@
       toggleBtn.onclick = async () => {
         if (!sessionActive) {
           toggleBtn.textContent = "Stop";
+          toggleBtn.style.backgroundColor = "#28a745";   // green when active
           await start(); // start the WebRTC session
           sessionActive = true;
         } else {
           toggleBtn.textContent = "Tell Me About Me";
+          toggleBtn.style.backgroundColor = "#53D76A";   // original red
           stopSession(); // stop everything
           sessionActive = false;
         }
