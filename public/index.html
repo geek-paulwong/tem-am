@@ -127,6 +127,73 @@
     width: 150px;
   ">Speaking...</div> -->
 
+  <!-- PHOTOS SECTION -->
+  <div style="width:100%; max-width:600px; margin-top:40px;">
+    <div style="display:flex; align-items:center; margin-bottom:15px;">
+      <img src="/photos.png" style="width:32px; height:32px; margin-right:10px;">
+      <h2 style="margin:0; font-size:1.4rem;">PHOTOS (82,568)</h2>
+    </div>
+
+    <div style="
+      display:grid;
+      grid-template-columns:repeat(4, 1fr);
+      gap:8px;">
+      <!-- 20 instant-loading photos -->
+      <img src="https://picsum.photos/id/1011/200" style="width:100%; border-radius:6px;">
+      <img src="https://picsum.photos/id/1012/200" style="width:100%; border-radius:6px;">
+      <img src="https://picsum.photos/id/1013/200" style="width:100%; border-radius:6px;">
+      <img src="https://picsum.photos/id/1014/200" style="width:100%; border-radius:6px;">
+      <img src="https://picsum.photos/id/1015/200" style="width:100%; border-radius:6px;">
+      <img src="https://picsum.photos/id/1016/200" style="width:100%; border-radius:6px;">
+      <img src="https://picsum.photos/id/1018/200" style="width:100%; border-radius:6px;">
+      <img src="https://picsum.photos/id/1020/200" style="width:100%; border-radius:6px;">
+      <img src="https://picsum.photos/id/1024/200" style="width:100%; border-radius:6px;">
+      <img src="https://picsum.photos/id/1025/200" style="width:100%; border-radius:6px;">
+      <img src="https://picsum.photos/id/1027/200" style="width:100%; border-radius:6px;">
+      <img src="https://picsum.photos/id/1031/200" style="width:100%; border-radius:6px;">
+      <img src="https://picsum.photos/id/1035/200" style="width:100%; border-radius:6px;">
+      <img src="https://picsum.photos/id/1039/200" style="width:100%; border-radius:6px;">
+      <img src="https://picsum.photos/id/1040/200" style="width:100%; border-radius:6px;">
+      <img src="https://picsum.photos/id/1041/200" style="width:100%; border-radius:6px;">
+      <img src="https://picsum.photos/id/1042/200" style="width:100%; border-radius:6px;">
+      <img src="https://picsum.photos/id/1043/200" style="width:100%; border-radius:6px;">
+      <img src="https://picsum.photos/id/1044/200" style="width:100%; border-radius:6px;">
+      <img src="https://picsum.photos/id/1045/200" style="width:100%; border-radius:6px;">
+    </div>
+  </div>
+
+  <!-- NOTES SECTION -->
+  <div style="width:100%; max-width:600px; margin-top:40px;">
+    <div style="display:flex; align-items:center; margin-bottom:15px;">
+      <img src="/notes.png" style="width:32px; height:32px; margin-right:10px;">
+      <h2 style="margin:0; font-size:1.4rem;">NOTES (5,385)</h2>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <!-- 20 generated demo notes -->
+      <div style="background:white; padding:12px; border-radius:8px;">Finalize landing page copy for Social Club v1.</div>
+      <div style="background:white; padding:12px; border-radius:8px;">Ideas for AI persona moods: Calm, Playful, Sage.</div>
+      <div style="background:white; padding:12px; border-radius:8px;">“Instant Room Join” should feel like walking into a party.</div>
+      <div style="background:white; padding:12px; border-radius:8px;">Test mic auto-leveling before public demo.</div>
+      <div style="background:white; padding:12px; border-radius:8px;">Rewrite onboarding flow to remove friction.</div>
+      <div style="background:white; padding:12px; border-radius:8px;">Notes on user retention loops for Social Club.</div>
+      <div style="background:white; padding:12px; border-radius:8px;">Review animation timing: 120ms → 80ms.</div>
+      <div style="background:white; padding:12px; border-radius:8px;">Try color palette with deeper blues.</div>
+      <div style="background:white; padding:12px; border-radius:8px;">Conversation starter prompts for new users.</div>
+      <div style="background:white; padding:12px; border-radius:8px;">Check AWS spend after enabling real-time voice.</div>
+      <div style="background:white; padding:12px; border-radius:8px;">Rewrite README for hackathon clarity.</div>
+      <div style="background:white; padding:12px; border-radius:8px;">Add vibration indicator when AI audio peaks.</div>
+      <div style="background:white; padding:12px; border-radius:8px;">Make AI greet user by name after first message.</div>
+      <div style="background:white; padding:12px; border-radius:8px;">Idea: “Daily Reflection” voice mode.</div>
+      <div style="background:white; padding:12px; border-radius:8px;">Fix safari autoplay rules for iOS.</div>
+      <div style="background:white; padding:12px; border-radius:8px;">Add debug toggle to client UI.</div>
+      <div style="background:white; padding:12px; border-radius:8px;">Try lighter font weight for titles.</div>
+      <div style="background:white; padding:12px; border-radius:8px;">Experiment with neural voice latency tuning.</div>
+      <div style="background:white; padding:12px; border-radius:8px;">Write a short pitch for Social Club mission.</div>
+      <div style="background:white; padding:12px; border-radius:8px;">Plan how to demo “AI remembers your vibe.”</div>
+    </div>
+  </div>
+
   <div id="debugPanel" style="
     position: fixed;
     bottom: 10px;
@@ -392,7 +459,7 @@
       toggleBtn.onclick = async () => {
         if (!sessionActive) {
           toggleBtn.textContent = "Stop";
-          toggleBtn.style.backgroundColor = "#28a745";   // green when active
+          toggleBtn.style.backgroundColor = "#f2473f";   // green when active
           await start(); // start the WebRTC session
           sessionActive = true;
         } else {
