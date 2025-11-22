@@ -211,6 +211,29 @@
   "></div>
 
   <script>
+    const TEMAM_NOTES = [
+      "Finalize landing page copy for Social Club v1.",
+      "Ideas for AI persona moods: Calm, Playful, Sage.",
+      "“Instant Room Join” should feel like walking into a party.",
+      "Test mic auto-leveling before public demo.",
+      "Rewrite onboarding flow to remove friction.",
+      "Notes on user retention loops for Social Club.",
+      "Review animation timing: 120ms → 80ms.",
+      "Try color palette with deeper blues.",
+      "Conversation starter prompts for new users.",
+      "Check AWS spend after enabling real-time voice.",
+      "Rewrite README for hackathon clarity.",
+      "Add vibration indicator when AI audio peaks.",
+      "Make AI greet user by name after first message.",
+      "Idea: “Daily Reflection” voice mode.",
+      "Fix safari autoplay rules for iOS.",
+      "Add debug toggle to client UI.",
+      "Try lighter font weight for titles.",
+      "Experiment with neural voice latency tuning.",
+      "Write a short pitch for Social Club mission.",
+      "Plan how to demo “AI remembers your vibe.”"
+    ];
+
     function debugLog(...args) {
       console.log(...args);
       const panel = document.getElementById("debugPanel");
@@ -244,7 +267,26 @@
         pc = new RTCPeerConnection();
         debugLog("RTCPeerConnection created");
 
+        const systemPrompt = `
+        You are TemAm, a personal AI who deeply knows the user's priorities.
+        Always reference the following notes when answering:
+
+        ${TEMAM_NOTES.map(n => "- " + n).join("\n")}
+
+        When the user asks for advice, tell them what they might have missed, what they should revisit, or what’s important next.
+        `;
+
         const dc = pc.createDataChannel("oai-debug");
+        dc.onopen = () => {
+          debugLog("✅ Data channel open with AI");
+          dc.send(JSON.stringify({
+            type: "session.update",
+            session: {
+              instructions: systemPrompt
+            }
+          }));
+        };
+
         // dc.onopen = () => debugLog("✅ Data channel open with AI");
         // dc.onmessage = (event) => debugLog("💬 AI event:", event.data);
 
