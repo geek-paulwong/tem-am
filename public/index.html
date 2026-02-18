@@ -134,7 +134,7 @@
       <h2 style="margin:0; font-size:1.4rem;">PHOTOS (82,568)</h2>
     </div>
 
-    <div style="
+    <div id="photosContainer" style="
       display:grid;
       grid-template-columns:repeat(4, 1fr);
       gap:8px;">
@@ -285,6 +285,30 @@
               instructions: systemPrompt
             }
           }));
+        };
+
+        dc.onmessage = (event) => {
+          const item = JSON.parse(event.data); // the LLM sends JSON messages
+          console.log('[item type]: ' + item.type);
+
+          // if (item.type === "function_call" && item.name === "addPhotosToTop") {
+          // // ✅ Instead of using LLM-provided URLs, call getLatestPhotos
+          // const photos = getLatestPhotos(item.arguments?.count || 5);
+          // addPhotosToTop(photos);
+          // } else if (item.type === "message") {
+          //   displayText(item.content); // normal AI text
+          // }
+
+          // simple hack: detect intent in the LLM message text
+          if (item.type === "message" && item.content) {
+            const text = item.content.toLowerCase();
+            if (text.includes("latest photos")) {
+              const photos = getLatestPhotos(5);
+              addPhotosToTop(photos);
+            } else {
+              displayText(item.content);
+            }
+          }
         };
 
         // dc.onopen = () => debugLog("✅ Data channel open with AI");
@@ -493,6 +517,28 @@
       if (!el) return;
       clearInterval(el.dataset.vibInterval);
       el.style.transform = "rotate(45deg)"; // keep static rotated state
+    }
+
+    function getLatestPhotos(count = 5) {
+      const startId = Math.floor(Math.random() * 1000);
+      const photos = [];
+      for (let i = 0; i < count; i++) {
+        photos.push(`https://picsum.photos/id/${startId + i}/200`);
+      }
+      return photos;
+    }
+
+    function addPhotosToTop(photos) {
+      const container = document.getElementById("photosContainer");
+      if (!container) return;
+
+      photos.forEach(url => {
+        const img = document.createElement("img");
+        img.src = url;
+        img.style.width = "100%";
+        img.style.borderRadius = "6px";
+        container.prepend(img);  // add to top
+      });
     }
 
     // Bind button after DOM is loaded

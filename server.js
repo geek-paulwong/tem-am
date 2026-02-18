@@ -26,7 +26,32 @@ app.post("/session-webrtc", async (req, res) => {
         body: JSON.stringify({
           model: "gpt-4o-realtime-preview",
           voice: "verse",
-          instructions: "Always respond in English, even if the user speaks another language.",
+
+          // instructions: "Always respond in English, even if the user speaks another language.",
+
+          instructions: `
+            Always respond in English.
+            If the user mentions "latest photos", call addPhotosToTop with 5 URLs.
+          `,
+
+          // 🔹 ADD THE TOOLS HERE
+          // tools: [
+          //   {
+          //     type: "function",
+          //     function: {
+          //       name: "addPhotosToTop",
+          //       description: "Adds photos on top of the PHOTOS grid",
+          //       parameters: {
+          //         type: "object",
+          //         properties: {
+          //           photos: { type: "array", items: { type: "string" } }
+          //         },
+          //         required: ["photos"]
+          //       }
+          //     }
+          //   }
+          // ],
+
           // 🔹 ADD THIS OBJECT TO FINE-TUNE VAD
           turn_detection: {
             type: "server_vad",
